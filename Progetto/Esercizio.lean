@@ -1,10 +1,12 @@
 import Mathlib.Data.SetLike.Fintype
+import Mathlib.Algebra.Group.Subgroup.Finite
 import Mathlib.GroupTheory.PGroup
 import Mathlib.GroupTheory.Sylow
 import Mathlib.GroupTheory.ClassEquation
 import Mathlib.GroupTheory.ArchimedeanDensely
 
 open Nat
+open Subgroup
 
 variable {G : Type*} {p : Nat}
 
@@ -26,7 +28,7 @@ lemma p0_quotient_contradiction (h : Nat.card G = p ^ 4) (pp : Nat.Prime p) (cen
     apply (Nat.ne_of_lt (Finite.one_lt_card_iff_nontrivial.mpr (@IsPGroup.center_nontrivial _ _ _ (G_p_group h) ⟨pp⟩ (G_nontrivial h pp) (G_finite h pp)))).symm
   contradiction
 
-lemma p3_quotient_not_cyclic (h : Nat.card G = p ^ 4) (h' : Nat.card (Subgroup.center G) = p ^ 3) (pp : p.Prime) : ¬ IsCyclic (G ⧸ (Subgroup.center G)) := by
+lemma p3_quotient_not_cyclic (pp : p.Prime) (h : Nat.card G = p ^ 4) (h' : Nat.card (Subgroup.center G) = p ^ 3) : ¬ IsCyclic (G ⧸ (Subgroup.center G)) := by
   by_contra h''
   -- let f := QuotientGroup.mk' (Subgroup.center G)
   have G_not_comm : ¬ ∀ (a b : G), a * b = b * a:= by
@@ -60,10 +62,10 @@ lemma p3_quotient_contradiction (h : Nat.card G = p ^ 4) (pp : Nat.Prime p) (h3_
       norm_num
     apply @isCyclic_of_prime_card _ _ _ ⟨pp⟩ this
   exfalso
-  exact (p3_quotient_not_cyclic h h3_eq pp this)
+  exact (p3_quotient_not_cyclic pp h h3_eq this)
 
 instance p4_G_comm_group [Finite G] (h : Nat.card G = p ^ 4) (h4_eq : Nat.card ↥(Subgroup.center G) = p ^ 4) : CommGroup G := by
-  apply _root_.Group.commGroupOfCenterEqTop
+  apply Group.commGroupOfCenterEqTop
   have : Nat.card (Subgroup.center G) = Nat.card G := by
     rw [h4_eq, h]
   apply (Subgroup.card_eq_iff_eq_top (Subgroup.center G)).mp this
@@ -151,8 +153,8 @@ lemma card_centr_p3 [Finite G] (h : Nat.card G = p^4) (pp : Nat.Prime p) (h2_eq 
     have : g ∈ Subgroup.center G := this rfl
     contradiction
 
-example (H K : Subgroup G) (h : K ≤ H) (g : G) (gin : g ∈ H) (h'' : g ∉ K) : K.carrier ⊂ H.carrier := by
-  exact HasSubset.Subset.ssubset_of_not_subset h fun a ↦ h'' (a gin)
+-- example (H K : Subgroup G) (h : K ≤ H) (g : G) (gin : g ∈ H) (h'' : g ∉ K) : K.carrier ⊂ H.carrier := by
+--   exact HasSubset.Subset.ssubset_of_not_subset h fun a ↦ h'' (a gin)
 
 -- lemma centr_comm (g : G) (h' : g ∉ Subgroup.center G) : (Subgroup.centralizer {g}).IsCommutative := by
 --   -- ⟨⟨fun a b => Subtype.ext (b.2.comm a).symm⟩⟩
@@ -549,12 +551,158 @@ lemma p1_p2_card_centr_exists_p3 (h : Nat.card G = p ^ 4) (pp : Nat.Prime p) (h1
 --     exact h' g' gnin
 
 --   sorry
-lemma card_centr_p3_comm (h : Nat.card G = p ^ 4) (pp : Nat.Prime p) (h1_eq : Nat.card ↥(Subgroup.center G) = p ^ 1) (g : G) (h' : Nat.card (Subgroup.centralizer {g}) = p ^ 3) : (Subgroup.centralizer {g}).IsCommutative := by
+
+-- lemma centr_p3_quotient_not_cyclic (h : Nat.card G = p ^ 4) (h' : Nat.card (Subgroup.center G) = p ^ 1) (pp : p.Prime) (g : G) (gnin : g ∉ Subgroup.center G) (h'' : Nat.card (Subgroup.centralizer {g}) = p ^ 3) : ¬ IsCyclic (Subgroup.centralizer {g} ⧸ (Subgroup.center (Subgroup.centralizer {g}))) := by
+--   by_contra h
+--   -- let f := QuotientGroup.mk' (Subgroup.center G)
+--   have centr_not_comm : ¬ ∀ (a b : (Subgroup.centralizer {g})), a * b = b * a:= by
+--     intro centr_comm
+--     have center_all_centr : Subgroup.center (Subgroup.centralizer {g}) = ⊤ := by
+--       ext g'
+--       apply Iff.trans (Subgroup.mem_center_iff)
+--       exact Iff.symm ((fun (ha : ∀ z : (Subgroup.centralizer {g}), z * g' = g' * z) ↦ (iff_true_right ha).mpr) (fun g_1 ↦ centr_comm g_1 g') trivial)
+--     have : Nat.card (Subgroup.center (Subgroup.centralizer {g})) = p ^ 3 := by
+--       rw [center_all_centr]
+--       exact (h'' ▸ Subgroup.card_top)
+--     have : Nat.card (Subgroup.center (Subgroup.centralizer {g})) ≠ Nat.card (Subgroup.center (Subgroup.centralizer {g})) := by
+--       nth_rw 1 [, this]
+--       exact Nat.ne_of_lt' (Nat.pow_lt_pow_of_lt (Nat.Prime.one_lt pp) (by norm_num))
+--     contradiction
+--   have G_comm (a b : G) : a * b = b * a := by
+--     -- #check IsCyclic.exists_generator
+--     --let ⟨⟨x, g, hg : x = (QuotientGroup.mk' (G ⧸ (Subgroup.center G)) g⟩, (hx: ∀ y ∈ (G ⧸ (Subgroup.center G)) y ∈ x.zpowers)⟩ := IsCyclic.exists_generator (α := G ⧸ (Subgroup.center G))
+--     apply commutative_of_cyclic_center_quotient (QuotientGroup.mk' (Subgroup.center G))
+--     rw [QuotientGroup.ker_mk']
+--   contradiction
+--   sorry
+
+theorem Set.Finite.card_le_card {s t : Set α} (ht : t.Finite) (hsub : s ⊆ t) : Nat.card s ≤ Nat.card t := by
+  have : Fintype t := Finite.fintype ht
+  have : Fintype s := Finite.fintype (subset ht hsub)
+  simp only [Nat.card_eq_fintype_card]
+  exact Set.card_le_card hsub
+
+-- theorem Set.Finite.card_union {s t : Set α} (ht : t.Finite) (hs : s.Finite) : Nat.card ((s ∪ t) : Set α) = Nat.card s + Nat.card t - Nat.card ((s ∩ t) : Set α) := by
+--   have : Fintype t := Finite.fintype ht
+--   have : Fintype s := Finite.fintype hs
+--   simp only [Nat.card_eq_card_toFinset]
+--   rw [toFinset_union, toFinset_inter]
+--   #check Finset.card_union_of_disjoint
+--   apply Finset.card_union
+
+theorem Set.Finite.card_union_of_disjoint {s t : Set α} (ht : t.Finite) (hs : s.Finite) (hd : Disjoint s t) : Nat.card ((s ∪ t) : Set α) = Nat.card s + Nat.card t := by
+  have : Fintype t := Finite.fintype ht
+  have : Fintype s := Finite.fintype hs
+  simp only [Nat.card_eq_card_toFinset]
+  rw [toFinset_union]
+  apply Finset.card_union_of_disjoint
+  exact Set.disjoint_toFinset.mpr hd
+
+lemma aux_quotient_centr_not_cyclic [Finite G] (pp : p.Prime) {g : G} (h' : Nat.card (Subgroup.centralizer {g}) = p ^ 3) (hk_eq : Nat.card (Subgroup.center (Subgroup.centralizer {g})) = p ^ 2) : ¬ IsCyclic (Subgroup.centralizer {g} ⧸ (Subgroup.center (Subgroup.centralizer {g}))) := by
+  by_contra h''
+  -- let f := QuotientGroup.mk' (Subgroup.center G)
+  have centr_not_comm : ¬ ∀ (a b : Subgroup.centralizer {g}), a * b = b * a := by
+    intro h''
+    have center_all_centr : Subgroup.center (Subgroup.centralizer {g}) = ⊤ := by
+      ext g'
+      apply Iff.trans (Subgroup.mem_center_iff)
+      exact Iff.symm ((fun (ha : ∀ z : Subgroup.centralizer {g}, z * g' = g' * z) ↦ (iff_true_right ha).mpr) (fun g_1 ↦ h'' g_1 g') trivial)
+    have : Nat.card (Subgroup.center (Subgroup.centralizer {g})) = p ^ 3 := by
+      rw [center_all_centr]
+      exact (h' ▸ Subgroup.card_top)
+    have : Nat.card (Subgroup.center (Subgroup.centralizer {g})) ≠ Nat.card (Subgroup.center (Subgroup.centralizer {g})) := by
+      nth_rw 1 [hk_eq, this]
+      exact Nat.ne_of_lt (Nat.pow_lt_pow_of_lt (Nat.Prime.one_lt pp) (by norm_num))
+    contradiction
+  have centr_comm (a b : (Subgroup.centralizer {g})) : a * b = b * a := by
+    -- #check IsCyclic.exists_generator
+    --let ⟨⟨x, g, hg : x = (QuotientGroup.mk' (G ⧸ (Subgroup.center G)) g⟩, (hx: ∀ y ∈ (G ⧸ (Subgroup.center G)) y ∈ x.zpowers)⟩ := IsCyclic.exists_generator (α := G ⧸ (Subgroup.center G))
+    apply commutative_of_cyclic_center_quotient (QuotientGroup.mk' (Subgroup.center (Subgroup.centralizer {g})))
+    rw [QuotientGroup.ker_mk']
+  contradiction
+
+lemma card_centr_p3_comm [Finite G] (h : Nat.card G = p ^ 4) (pp : Nat.Prime p) (h1_eq : Nat.card ↥(Subgroup.center G) = p ^ 1) (g : G) (gnin : g ∉ Subgroup.center G) (h' : Nat.card (Subgroup.centralizer {g}) = p ^ 3) : (Subgroup.centralizer {g}).IsCommutative := by
+  -- refine { is_comm := ?_ }
+  -- refine { comm := ?_ }
   -- simp only [Subgroup.IsCommutative]
   -- by_contra h''
   -- push_neg at h''
   -- #check IsPGroup.card_center_eq_prime_pow
-  sorry
+  have : IsPGroup p (Subgroup.centralizer {g}) := by
+    exact IsPGroup.of_card h'
+  rcases @IsPGroup.card_center_eq_prime_pow _ _ _ ⟨pp⟩ _ h' (by norm_num) with ⟨k, hk, hk_eq⟩
+  have : k ≤ 3 := by
+    apply (Nat.pow_le_pow_iff_right (Nat.Prime.one_lt pp)).mp
+    exact h' ▸ hk_eq ▸ Subgroup.card_le_card_group (Subgroup.center ↥(Subgroup.centralizer {g}))
+  have : 2 ≤ k := by
+    apply (Nat.pow_le_pow_iff_right (Nat.Prime.one_lt pp)).mp
+    rw [← hk_eq]
+    have g_in : g ∈ (Subgroup.center ↥(Subgroup.centralizer {g})).map (Subgroup.subtype (Subgroup.centralizer {g})) := by
+      apply Subgroup.mem_map.mpr
+      simp only [Subgroup.mem_center_iff]
+      use ⟨g, Subgroup.mem_centralizer_singleton_iff.mpr rfl⟩
+      simp [Subgroup.mem_centralizer_iff]
+      intro a h
+      exact h.symm
+
+    have card_closure : p^2 ≤ Nat.card (Subgroup.closure ({g} ∪ Subgroup.center G)) := by
+      -- rw [Subgroup.closure_union]
+      -- #check card_sum
+      -- #check sup_mem_supClosure
+      -- rw [← Subgroup.zpowers_eq_closure, Subgroup.closure_eq]
+      --#check closure_le
+      have le_card_closure : Nat.card (({g} ∪ (Subgroup.center G)) : Set G) ≤ Nat.card (Subgroup.closure ({g} ∪ (Subgroup.center G))) := Set.Finite.card_le_card Subtype.finite Subgroup.subset_closure
+      have : p ^ 1 < Nat.card (({g} ∪ Subgroup.center G) : Set G) := by
+        rw [← h1_eq]
+        have : ((Subgroup.center G) : Set G).Finite := by
+          exact Set.toFinite (Subgroup.center G).carrier
+        rw [Set.Finite.card_union_of_disjoint this (Set.finite_singleton g) (Set.disjoint_singleton_left.mpr gnin)]
+        apply Nat.lt_add_of_pos_left Nat.card_pos
+      have : p ^ 1 < Nat.card (Subgroup.closure ({g} ∪ Subgroup.center G)) := Nat.lt_of_lt_of_le this le_card_closure
+      rcases (Nat.dvd_prime_pow (pp)).mp (h ▸ Subgroup.card_subgroup_dvd_card (Subgroup.closure ({g} ∪ Subgroup.center G))) with ⟨j, hj, hj_eq⟩
+      have : 1 < j := by
+        apply (Nat.pow_lt_pow_iff_right (Nat.Prime.one_lt pp)).mp (hj_eq ▸ this)
+      interval_cases j using this, hj
+      · exact Nat.le_of_eq (Eq.symm hj_eq)
+      all_goals rw [hj_eq]; apply (Nat.pow_le_pow_iff_right (Nat.Prime.one_lt pp)).mpr; norm_num
+
+    have : Subgroup.closure ({g} ∪ Subgroup.center G) ≤ (Subgroup.center ↥(Subgroup.centralizer {g})).map (Subgroup.subtype (Subgroup.centralizer {g})) := by
+      apply (Subgroup.closure_le ((Subgroup.center ↥(Subgroup.centralizer {g})).map (Subgroup.subtype (Subgroup.centralizer {g})))).mpr
+      apply Set.union_subset
+      · apply Set.singleton_subset_iff.mpr g_in
+      intro a ha
+      apply Subgroup.mem_map.mpr
+      simp only [Subgroup.mem_center_iff]
+      simp [Subgroup.mem_centralizer_iff]
+      constructor
+      · intro b hb
+        exact Subgroup.mem_center_iff.mp ha b
+      exact Subgroup.mem_center_iff.mp ha g
+    have : Nat.card (Subgroup.closure ({g} ∪ Subgroup.center G)) ≤ Nat.card ((Subgroup.center ↥(Subgroup.centralizer {g})).map (Subgroup.subtype (Subgroup.centralizer {g}))) := Subgroup.card_le_of_le this
+    rw [Subgroup.card_subtype (Subgroup.centralizer {g}) (Subgroup.center ↥(Subgroup.centralizer {g}))] at this
+    exact Nat.le_trans card_closure this
+
+  interval_cases k
+
+  · have : Nat.card (Subgroup.centralizer {g} ⧸ Subgroup.center (Subgroup.centralizer {g})) = Nat.card (Subgroup.centralizer {g}) / Nat.card (Subgroup.center (Subgroup.centralizer {g})) := by
+      apply Nat.eq_div_of_mul_eq_right
+      · rw [hk_eq]; norm_num; exact Nat.Prime.ne_zero pp
+      rw [← (Subgroup.center (Subgroup.centralizer {g})).index_eq_card,mul_comm, (Subgroup.center (Subgroup.centralizer {g})).index_mul_card]
+    have : IsCyclic (Subgroup.centralizer {g} ⧸ Subgroup.center (Subgroup.centralizer {g})) := by
+      have : Nat.card (Subgroup.centralizer {g} ⧸ Subgroup.center (Subgroup.centralizer {g})) = p := by
+        rw [this, h', hk_eq, Nat.pow_div (by norm_num) (Nat.Prime.pos pp)]
+        norm_num
+      apply @isCyclic_of_prime_card _ _ _ ⟨pp⟩ this
+    exfalso
+    exact (aux_quotient_centr_not_cyclic pp h' hk_eq this)
+
+  · have : Subgroup.center ↥(Subgroup.centralizer {g}) = ⊤ := by
+      exact (Subgroup.card_eq_iff_eq_top (Subgroup.center ↥(Subgroup.centralizer {g}))).mp (h' ▸ hk_eq)
+    --have : CommGroup ↥(Subgroup.centralizer {g}) := Group.commGroupOfCenterEqTop this
+    refine {is_comm := ?_}
+    refine {comm := ?_}
+    intro a b
+    apply Subgroup.mem_center_iff.mp (this ▸ Subgroup.mem_top b)
 
 lemma p1_quotient (h : Nat.card G = p ^ 4) (pp : Nat.Prime p) (h1_eq : Nat.card ↥(Subgroup.center G) = p ^ 1) : ∃ H : Subgroup G, H.IsCommutative ∧ Nat.card ↥H = p ^ 3 := by
   have : Nat.card (Subgroup.center G) < Nat.card G := by
@@ -568,12 +716,12 @@ lemma p1_quotient (h : Nat.card G = p ^ 4) (pp : Nat.Prime p) (h1_eq : Nat.card 
   obtain ⟨g, gnin⟩ := @exists_diff_if_card _ _ (G_finite h pp) (Subgroup.center G) this
   rcases (@p1_card_centr_p2_p3 _ _ _ (G_finite h pp) h pp h1_eq g gnin) with h2_eq | h3_eq
   · obtain ⟨g', g'nin, h3_eq⟩ := p1_p2_card_centr_exists_p3 h pp h1_eq
-    use Subgroup.centralizer {g'}, card_centr_p3_comm h pp h1_eq g' h3_eq, h3_eq
-  · use Subgroup.centralizer {g}, card_centr_p3_comm h pp h1_eq g h3_eq , h3_eq
+    use Subgroup.centralizer {g'}, @card_centr_p3_comm _ _ _ (G_finite h pp) h pp h1_eq g' g'nin h3_eq, h3_eq
+  · use Subgroup.centralizer {g}, @card_centr_p3_comm _ _ _ (G_finite h pp) h pp h1_eq g gnin h3_eq , h3_eq
 
-#check CommGroup G
-#check Subgroup.IsCommutative
-#check Subgroup.toGroup
+-- #check CommGroup G
+-- #check Subgroup.IsCommutative
+-- #check Subgroup.toGroup
 
 theorem prova (h : Nat.card G = p ^ 4) (pp : p.Prime) : ∃ H : Subgroup G, H.IsCommutative ∧ Nat.card H = p ^ 3 := by
   have : Nat.card (Subgroup.center G) ∣ p ^ 4 := by
@@ -589,6 +737,6 @@ theorem prova (h : Nat.card G = p ^ 4) (pp : p.Prime) : ∃ H : Subgroup G, H.Is
   · exact p3_quotient_contradiction h pp hk_eq
   · exact p4_quotient h pp hk_eq
 
-#check Subgroup.card_subgroup_dvd_card
-#check IsPGroup.of_card
-#check IsPGroup.iff_card
+-- #check Subgroup.card_subgroup_dvd_card
+-- #check IsPGroup.of_card
+-- #check IsPGroup.iff_card
