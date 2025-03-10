@@ -31,6 +31,7 @@ To work with this project, you need:
 
 ## Usage
 To work with the proofs, open the file in VS Code with the Lean extension installed.
+The main files are [`MainResult.lean`](./Progetto/MainResult.lean) and [`Basic.lean`](./Progetto/Basic.lean).
 
 
 ## Contributions

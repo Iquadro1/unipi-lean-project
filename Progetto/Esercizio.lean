@@ -1,16 +1,15 @@
-import Mathlib.Data.SetLike.Fintype
-import Mathlib.Algebra.Group.Subgroup.Finite
 import Mathlib.GroupTheory.PGroup
 import Mathlib.GroupTheory.Sylow
 import Mathlib.GroupTheory.ClassEquation
 import Mathlib.GroupTheory.ArchimedeanDensely
+import Mathlib.GroupTheory.Finiteness
 
 open Nat
 open Subgroup
 
 variable {G : Type*} {p : Nat}
 
-lemma G_finite (h : Nat.card G = p ^ 4) (pp : p.Prime) : Finite G := Nat.finite_of_card_ne_zero (Nat.ne_zero_iff_zero_lt.mpr (h.symm ▸ Nat.pos_pow_of_pos 4 (Nat.Prime.pos pp)))
+lemma G_finite (h : Nat.card G = p ^ 4) (pp : p.Prime) : Finite G := Nat.finite_of_card_ne_zero (Nat.ne_zero_iff_zero_lt.mpr (h.symm ▸ Nat.pow_pos (Nat.Prime.pos pp)))
 
 variable [Group G]
 
@@ -19,9 +18,6 @@ lemma G_p_group (h : Nat.card G = p ^ 4): IsPGroup p G := IsPGroup.of_card h
 lemma G_nontrivial (h : Nat.card G = p ^ 4) (pp : p.Prime) : Nontrivial G := by
   apply (@IsPGroup.nontrivial_iff_card _ _ _  (G_p_group h) ⟨pp⟩ (G_finite h pp)).mpr
   use 4, by norm_num, h
-
-lemma center_finite (h : Nat.card G = p ^ 4) (pp : p.Prime): Finite (Subgroup.center G) := by
-  apply @Subtype.finite _ (G_finite h pp)
 
 lemma p3_quotient_not_cyclic (pp : p.Prime) (h : Nat.card G = p ^ 4) (h' : Nat.card (Subgroup.center G) = p ^ 3) : ¬ IsCyclic (G ⧸ (Subgroup.center G)) := by
   by_contra h''
@@ -67,7 +63,7 @@ instance p4_G_comm_group [Finite G] (h : Nat.card G = p ^ 4) (h4_eq : Nat.card �
 lemma p4_quotient (h : Nat.card G = p ^ 4) (pp : Nat.Prime p) (h4_eq : Nat.card ↥(Subgroup.center G) = p ^ 4) : ∃ H : Subgroup G, H.IsCommutative ∧ Nat.card ↥H = p ^ 3 := by
   have : p^3 ≤ Nat.card G := by
     rw [h]
-    exact Nat.pow_le_pow_of_le_right (Nat.Prime.one_le pp) (by norm_num)
+    exact Nat.pow_le_pow_right (Nat.Prime.one_le pp) (by norm_num)
   rcases Sylow.exists_subgroup_card_pow_prime_of_le_card pp (G_p_group h) this with ⟨H, h_eq⟩
 
   have : H.IsCommutative := by
@@ -78,13 +74,10 @@ lemma exists_diff_if_card [Finite G] (H : Subgroup G) (h : Nat.card H < Nat.card
   refine not_forall.mp ?_
   by_contra h'
   have : H = ⊤ := by
-
     ext g
     exact (iff_true_right trivial).mpr (h' g)
   have : Nat.card G = Nat.card H := by
-
     exact ((Subgroup.card_eq_iff_eq_top H).mpr this).symm
-
   linarith
 
 lemma card_center_le_centr [Finite G] (g : G) (h' : g ∉ Subgroup.center G) : Nat.card (Subgroup.center G) < Nat.card (Subgroup.centralizer {g}) := by
@@ -124,7 +117,7 @@ lemma closure_center_g_iscomm {g : G} : (Subgroup.closure ({g} ∪ Subgroup.cent
       _ = y⁻¹ * (x * y) * y⁻¹ := by rw [hxy]
       _ = y⁻¹ * x := by group
 
-theorem Set.Finite.card_le_card {s t : Set α} (ht : t.Finite) (hsub : s ⊆ t) : Nat.card s ≤ Nat.card t := by
+theorem Set.Finite.card_le_card {α : Type*} {s t : Set α} (ht : t.Finite) (hsub : s ⊆ t) : Nat.card s ≤ Nat.card t := by
   have : Fintype t := Finite.fintype ht
   have : Fintype s := Finite.fintype (subset ht hsub)
   simp only [Nat.card_eq_fintype_card]
@@ -134,7 +127,7 @@ lemma le_card_closure [Finite G] {g : G} : Nat.card (({g} ∪ (Subgroup.center G
 
 open Classical
 
-theorem Set.Finite.card_union_of_disjoint {s t : Set α} (ht : t.Finite) (hs : s.Finite) (hd : Disjoint s t) : Nat.card ((s ∪ t) : Set α) = Nat.card s + Nat.card t := by
+theorem Set.Finite.card_union_of_disjoint {α : Type*} {s t : Set α} (ht : t.Finite) (hs : s.Finite) (hd : Disjoint s t) : Nat.card ((s ∪ t) : Set α) = Nat.card s + Nat.card t := by
   have : Fintype t := Finite.fintype ht
   have : Fintype s := Finite.fintype hs
   simp only [Nat.card_eq_card_toFinset]
@@ -142,8 +135,7 @@ theorem Set.Finite.card_union_of_disjoint {s t : Set α} (ht : t.Finite) (hs : s
   apply Finset.card_union_of_disjoint
   exact Set.disjoint_toFinset.mpr hd
 
-lemma card_closure [Finite G] (pp : p.Prime) (h : Nat.card G = p ^ 4) (h' : Nat.card (Subgroup.center G) = p ^ k) {g : G} (gnin : g ∉ Subgroup.center G) : p ^ (k + 1) ≤ Nat.card (Subgroup.closure ({g} ∪ Subgroup.center G)) := by
-
+lemma card_closure {k : ℕ} [Finite G] (pp : p.Prime) (h : Nat.card G = p ^ 4) (h' : Nat.card (Subgroup.center G) = p ^ k) {g : G} (gnin : g ∉ Subgroup.center G) : p ^ (k + 1) ≤ Nat.card (Subgroup.closure ({g} ∪ Subgroup.center G)) := by
   have : p ^ k < Nat.card (({g} ∪ Subgroup.center G) : Set G) := by
     rw [← h']
     have : ((Subgroup.center G) : Set G).Finite := by
@@ -158,8 +150,7 @@ lemma card_closure [Finite G] (pp : p.Prime) (h : Nat.card G = p ^ 4) (h' : Nat.
   rw [hj_eq]
   apply (Nat.pow_le_pow_iff_right (Nat.Prime.one_lt pp)).mpr this
 
-instance commgroup_if_top_comm (h : (⊤ : Subgroup G).IsCommutative) : ∀ (a b : G), a * b = b * a := by
-  exact fun a b ↦ mul_comm_of_mem_isCommutative ⊤ trivial trivial
+instance commgroup_if_top_comm (h : (⊤ : Subgroup G).IsCommutative) : ∀ (a b : G), a * b = b * a := fun _ _ ↦ mul_comm_of_mem_isCommutative ⊤ trivial trivial
 
 lemma p2_card_closure_center_g [Finite G] (h : Nat.card G = p^4) (pp : Nat.Prime p) (h2_eq : Nat.card ↥(Subgroup.center G) = p ^ 2) {g : G} (gnin : g ∉ Subgroup.center G) : Nat.card (Subgroup.closure ({g} ∪ Subgroup.center G)) = p ^ 3 := by
   have : Nat.card (Subgroup.closure ({g} ∪ Subgroup.center G)) ∣ p ^ 4 := by
@@ -215,7 +206,7 @@ lemma p1_card_centr_p2_p3 [Finite G] (h : Nat.card G = p ^ 4) (pp : Nat.Prime p)
   · left; exact hk_eq
   · right; exact hk_eq
 
-lemma card_conj_class_1 (x : ConjClasses G) : Nat.card x.carrier * Nat.card (Subgroup.centralizer {Classical.choose (ConjClasses.exists_rep x)}) = Nat.card G := by
+lemma card_conj_class (x : ConjClasses G) : Nat.card x.carrier * Nat.card (Subgroup.centralizer {Classical.choose (ConjClasses.exists_rep x)}) = Nat.card G := by
 
   rw [Subgroup.nat_card_centralizer_nat_card_stabilizer (Classical.choose (ConjClasses.exists_rep x))]
 
@@ -237,7 +228,7 @@ lemma card_conj_class_1 (x : ConjClasses G) : Nat.card x.carrier * Nat.card (Sub
 
 lemma card_conj_class_2 [Finite G] : ∀ (x : ConjClasses G) (_ : x ∈ ConjClasses.noncenter G), Nat.card x.carrier = Nat.card G / Nat.card (Subgroup.centralizer {Classical.choose (ConjClasses.exists_rep x)}) := by
   intro x xnonc
-  apply (Nat.div_eq_of_eq_mul_left card_pos (card_conj_class_1 x).symm).symm
+  apply (Nat.div_eq_of_eq_mul_left card_pos (card_conj_class x).symm).symm
 
 lemma sum_eq [Finite G] : ∑ᶠ (x : ConjClasses G) (_ : x ∈ (ConjClasses.noncenter G)), Nat.card x.carrier =  ∑ᶠ (x : ConjClasses G) (_ : x ∈ (ConjClasses.noncenter G)) , Nat.card G / Nat.card (Subgroup.centralizer { Classical.choose (ConjClasses.exists_rep x) }) := by
   rw [finsum_congr (λ x ↦ finsum_congr (λ h' ↦ card_conj_class_2 x h'))]
@@ -252,7 +243,6 @@ lemma p1_p2_card_centr_exists_p3 (h : Nat.card G = p ^ 4) (pp : Nat.Prime p) (h1
     · exfalso
       have := h' g' g'nin
       contradiction
-
   have eq := @Group.nat_card_center_add_sum_card_noncenter_eq_card G _ (G_finite h pp)
   rw [@sum_eq _ _ (G_finite h pp)] at eq
 

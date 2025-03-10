@@ -1,9 +1,10 @@
-import Mathlib.Data.SetLike.Fintype
-import Mathlib.Algebra.Group.Subgroup.Finite
+-- import Mathlib.Data.SetLike.Fintype
+-- import Mathlib.Algebra.Group.Subgroup.Finite
 import Mathlib.GroupTheory.PGroup
 import Mathlib.GroupTheory.Sylow
 import Mathlib.GroupTheory.ClassEquation
 import Mathlib.GroupTheory.ArchimedeanDensely
+import Mathlib.GroupTheory.Finiteness
 
 open Nat
 open Subgroup
